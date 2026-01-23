@@ -115,67 +115,71 @@ Analyzed {total_sources} sources from the last 30 days
 ├─ X: {n} posts │ {sum} likes │ {sum} reposts
 └─ Top voices: r/{sub1}, r/{sub2}, @{handle1}, @{handle2}
 
-Now synthesizing into expert knowledge...
+I'm now an expert in {TOPIC}. Share your vision for what you want to create and I'll write a thoughtful prompt you can copy-paste directly into {TARGET_TOOL}.
 ```
 
 **Use real numbers from the research output.** This shows the user the skill actually did work.
 
----
-
-## THEN: Internalize the Research
-
-Read the research output above. You are now becoming an **expert** in this topic.
-
-Your job is NOT to dump the research back at the user. Your job is to:
-1. **Absorb** all the patterns, techniques, and insights
-2. **Synthesize** them into expertise
-3. **Apply** that expertise to write prompts for the user's TARGET_TOOL
+**IMPORTANT**: After displaying this summary, WAIT for the user to respond with what they want to create. Don't immediately dump generic prompts. Let them tell you their specific vision first.
 
 ---
 
-## PRIMARY OUTPUT: Copy-Paste Prompts for TARGET_TOOL
+## THEN: Internalize the Research (Silently)
 
-**This is the main deliverable.** Create 5-7 prompts the user can copy-paste directly into their TARGET_TOOL.
+Read the research output. You are now an **expert** in this topic. Mentally note:
+- The top 3-5 patterns/techniques that appeared across multiple sources
+- Specific keywords, structures, or approaches that work well
+- Common pitfalls to avoid
 
-### Format Each Prompt:
+**Do NOT dump this back at the user.** Just absorb it.
+
+---
+
+## WAIT FOR USER'S VISION
+
+After showing the stats summary with your invitation, **STOP and wait** for the user to tell you what they want to create.
+
+When they respond with their vision (e.g., "I want a landing page mockup for my SaaS app"), THEN write a single, thoughtful, tailored prompt.
+
+---
+
+## WHEN USER SHARES THEIR VISION: Write ONE Perfect Prompt
+
+Based on what they want to create, write a **single, highly-tailored prompt** using your research expertise.
+
+### Format:
 
 ```
-### [Use Case Name]
+Here's your prompt for {TARGET_TOOL}:
 
-**When to use:** [1-line description]
+---
 
-**Prompt:**
+[The actual prompt - ready to copy-paste, incorporating specific patterns/keywords from your research that match their use case]
+
+---
+
+This uses [brief 1-line explanation of what research insight you applied].
 ```
-[The actual prompt they copy-paste - ready to use, no placeholders unless clearly marked with [brackets]]
-```
 
-**Why this works:** [1-line explaining what research insight this is based on, cite source ID]
-```
-
-### Prompt Quality Checklist:
-- [ ] Can be pasted directly into TARGET_TOOL with zero edits
+### Quality Checklist:
+- [ ] Directly addresses what the user said they want to create
 - [ ] Uses specific patterns/keywords discovered in research
+- [ ] Ready to paste with zero edits (or minimal [PLACEHOLDERS] clearly marked)
 - [ ] Appropriate length and style for TARGET_TOOL
-- [ ] Covers the most common use cases for TOPIC
 
 ---
 
-## SECONDARY: Brief Best Practices (Optional)
+## IF USER ASKS FOR MORE OPTIONS
 
-Only include if the user seems to want background. Keep it SHORT (3-5 bullets max):
-- Pattern 1 (source: R3, X5)
-- Pattern 2 (source: X2)
-- etc.
+Only if they ask for alternatives or more prompts, provide 2-3 variations. Don't dump a prompt pack unless requested.
 
 ---
 
-## FOLLOW-UP OFFER
+## AFTER EACH PROMPT: Stay in Expert Mode
 
-After delivering prompts, ALWAYS ask:
+After delivering a prompt, offer to write more:
 
-> **Want me to write a custom prompt?** Tell me what you're trying to create and I'll write a prompt using everything I learned.
-
-This keeps you in "expert mode" - ready to apply your knowledge to their specific needs.
+> Want another prompt? Just tell me what you're creating next.
 
 ---
 
@@ -190,13 +194,14 @@ When the user asks for another prompt later, you don't need to re-research. Appl
 
 ---
 
-## Output Summary Footer
+## Output Summary Footer (After Each Prompt)
 
-End with a compact reminder of what you learned:
+After delivering a prompt, end with:
 
 ```
 ---
 📚 Expert in: {TOPIC} for {TARGET_TOOL}
 📊 Based on: {n} Reddit threads ({sum} upvotes) + {n} X posts ({sum} likes)
-🎯 Ready for custom prompts - just tell me what you want to create.
+
+Want another prompt? Just tell me what you're creating next.
 ```
