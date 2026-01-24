@@ -1,11 +1,11 @@
 ---
 name: last30days
-description: Research a topic from the last 30 days on Reddit + X, become an expert, and write copy-paste-ready prompts for the user's target tool.
+description: Research a topic from the last 30 days on Reddit + X + Web, become an expert, and write copy-paste-ready prompts for the user's target tool.
 argument-hint: "[topic] for [tool]" or "[topic]"
 context: fork
 agent: Explore
 disable-model-invocation: true
-allowed-tools: Bash, Read, Write, AskUserQuestion
+allowed-tools: Bash, Read, Write, AskUserQuestion, WebSearch
 ---
 
 # last30days: Become Expert → Write Prompts
@@ -84,8 +84,29 @@ Run the research orchestrator with the TOPIC.
 - `--deep` → Comprehensive (50-70 Reddit, 40-60 X)
 
 ```bash
-python3 ~/.claude/skills/last30days/scripts/last30days.py "$ARGUMENTS" --emit=compact 2>&1
+python3 ~/.claude/skills/last30days/scripts/last30days.py "$ARGUMENTS" --include-web --emit=compact 2>&1
 ```
+
+---
+
+## WebSearch Execution
+
+**CRITICAL**: After the Python script completes, if you see `### WEBSEARCH REQUIRED ###` in the output, you MUST use your WebSearch tool to find additional sources.
+
+**WebSearch query**: Use the TOPIC to search for recent content (last 30 days).
+
+**What to search for**:
+- Blog posts, tutorials, documentation about {TOPIC}
+- News articles, announcements
+- Technical guides, best practices
+
+**What to EXCLUDE** (already covered by Reddit/X):
+- reddit.com URLs
+- x.com or twitter.com URLs
+
+**How many**: Find 8-15 high-quality, relevant web pages.
+
+**After searching**: Include the WebSearch results in your synthesis. WebSearch results supplement Reddit/X but should be weighted LOWER (they lack engagement metrics like upvotes/likes that indicate community validation).
 
 ---
 
@@ -138,6 +159,7 @@ KEY PATTERNS I'll use:
 Analyzed {total_sources} sources from the last 30 days
 ├─ Reddit: {n} threads │ {sum} upvotes │ {sum} comments
 ├─ X: {n} posts │ {sum} likes │ {sum} reposts
+├─ Web: {n} pages │ {domains}
 └─ Top voices: r/{sub1}, r/{sub2}, @{handle1}, @{handle2}
 
 ---
@@ -241,7 +263,7 @@ After delivering a prompt, end with:
 ```
 ---
 📚 Expert in: {TOPIC} for {TARGET_TOOL}
-📊 Based on: {n} Reddit threads ({sum} upvotes) + {n} X posts ({sum} likes)
+📊 Based on: {n} Reddit threads ({sum} upvotes) + {n} X posts ({sum} likes) + {n} web pages
 
 Want another prompt? Just tell me what you're creating next.
 ```
