@@ -322,15 +322,15 @@ def render_full_report(report: schema.Report) -> str:
             lines.append(f"> {item.snippet}")
             lines.append("")
 
-    # Placeholders for Claude synthesis
+    # Placeholders for follow-up synthesis (by you or an LLM)
     lines.append("## Best Practices")
     lines.append("")
-    lines.append("*To be synthesized by Claude*")
+    lines.append("*Use the Reddit/X results above to summarize best practices, or paste this report into an LLM and ask it to synthesize this section.*")
     lines.append("")
 
     lines.append("## Prompt Pack")
     lines.append("")
-    lines.append("*To be synthesized by Claude*")
+    lines.append("*Use the research above to create copy-paste-ready prompts, or ask an LLM to generate a prompt pack from this report.*")
     lines.append("")
 
     return "\n".join(lines)

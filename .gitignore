@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+.env
+*.egg-info/
+.eggs/
+
+# Don't commit local env (API keys)
+.env
+.env.local
+*.env
+
+# IDE / OS
+.idea/
+.DS_Store
+*.swp
+*.swo
