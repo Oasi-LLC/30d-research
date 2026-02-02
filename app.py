@@ -137,83 +137,6 @@ def _offer_docx_download(content: str, base_name: str) -> None:
         st.caption("Word: install python-docx")
 
 
-def _pdf_safe_text(text: str) -> str:
-    """Return ASCII-only text for FPDF Helvetica to avoid FPDFUnicodeEncodingException and empty output."""
-    return "".join(
-        c if ord(c) < 128 and (c.isprintable() or c in "\n\t\r") else "?"
-        for c in text
-    )
-
-
-def _pdf_break_long_words(text: str, max_chars: int = 80) -> str:
-    """Insert space every max_chars in long unbreakable runs so FPDF can wrap (avoids 'Not enough horizontal space')."""
-    result = []
-    run = []
-    for c in text:
-        if c.isspace():
-            if run:
-                s = "".join(run)
-                for i in range(0, len(s), max_chars):
-                    result.append(s[i : i + max_chars])
-                    if i + max_chars < len(s):
-                        result.append(" ")
-                run = []
-            result.append(c)
-        else:
-            run.append(c)
-    if run:
-        s = "".join(run)
-        for i in range(0, len(s), max_chars):
-            result.append(s[i : i + max_chars])
-            if i + max_chars < len(s):
-                result.append(" ")
-    return "".join(result)
-
-
-def _offer_pdf_download(content: str, base_name: str) -> None:
-    """Offer PDF download if fpdf2 is available. Uses ASCII-only + word breaks for max compatibility."""
-    try:
-        from fpdf import FPDF
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Helvetica", size=10)
-        w = getattr(pdf, "epw", None)
-        if not w or w <= 0:
-            w = pdf.w - pdf.l_margin - pdf.r_margin
-        w = max(w, 100)
-        # Always add a title so PDF is never empty
-        pdf.multi_cell(w, 6, "Research Report")
-        pdf.ln(2)
-        wrote_any = False
-        for line in content.replace("\r", "").split("\n"):
-            line = line.replace("**", "").strip()
-            if line:
-                safe = _pdf_safe_text(line)
-                safe = _pdf_break_long_words(safe, max_chars=72)
-                safe = safe.strip() or "(no text)"
-                if safe and safe != "(no text)":
-                    pdf.multi_cell(w, 6, safe)
-                    wrote_any = True
-        if not wrote_any and content.strip():
-            pdf.multi_cell(w, 6, "(Report content could not be rendered in PDF; use Markdown or Word download.)")
-        pdf_bytes = pdf.output()
-        if not isinstance(pdf_bytes, bytes):
-            pdf_bytes = bytes(pdf_bytes)
-        st.download_button(
-            "📕 PDF",
-            data=pdf_bytes,
-            file_name=f"{base_name}.pdf",
-            mime="application/pdf",
-            key="dl_pdf",
-        )
-    except ImportError:
-        st.caption("PDF: install fpdf2")
-    except Exception as e:
-        if "Unicode" in type(e).__name__ or "FPDF" in type(e).__name__:
-            st.caption("PDF: some characters or layout could not be rendered; use Markdown or Word download.")
-        else:
-            raise
-
 # Project root (directory containing app.py and scripts/)
 PROJECT_ROOT = Path(__file__).resolve().parent
 SCRIPT_PATH = PROJECT_ROOT / "scripts" / "last30days.py"
@@ -446,7 +369,7 @@ if display_content:
         safe_topic = "".join(c if c.isalnum() or c in " -_" else "_" for c in (research_topic or topic or "report")[:50]).strip() or "report"
         base_name = f"last30days_{safe_topic}".replace(" ", "_")
 
-        col_dl1, col_dl2, col_dl3, col_dl4 = st.columns(4)
+        col_dl1, col_dl2, col_dl3 = st.columns(3)
         with col_dl1:
             st.download_button(
                 "📄 Markdown (.md)" if research_format != "json" else "📄 JSON (.json)",
@@ -468,11 +391,6 @@ if display_content:
                 _offer_docx_download(display_content, base_name)
             else:
                 st.caption("Word for .md output")
-        with col_dl4:
-            if research_format != "json":
-                _offer_pdf_download(display_content, base_name)
-            else:
-                st.caption("PDF for .md output")
 
 # Show log from last run (when viewing results or when last run had errors)
 if research_stderr:

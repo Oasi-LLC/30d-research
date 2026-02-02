@@ -4,9 +4,8 @@ streamlit>=1.28.0
 # Login protection (email/username + password) for public deployment
 streamlit-authenticator>=0.3.0
 
-# Optional: for Download as Word / PDF in the Streamlit app
+# Optional: for Download as Word in the Streamlit app
 python-docx>=0.8.11
-fpdf2>=2.7.0
 
 # Optional: for "Generate with Claude" (Best Practices & Prompt Pack)
 anthropic>=0.39.0
