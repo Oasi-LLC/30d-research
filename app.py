@@ -137,6 +137,39 @@ def _offer_docx_download(content: str, base_name: str) -> None:
         st.caption("Word: install python-docx")
 
 
+def _pdf_safe_text(text: str) -> str:
+    """Return text safe for FPDF default font (Latin-1): replace non-Latin-1 chars to avoid FPDFUnicodeEncodingException."""
+    return "".join(
+        c if ord(c) <= 255 and (c.isprintable() or c in "\n\t\r") else "?"
+        for c in text
+    )
+
+
+def _pdf_break_long_words(text: str, max_chars: int = 80) -> str:
+    """Insert space every max_chars in long unbreakable runs so FPDF can wrap (avoids 'Not enough horizontal space')."""
+    result = []
+    run = []
+    for c in text:
+        if c.isspace():
+            if run:
+                s = "".join(run)
+                for i in range(0, len(s), max_chars):
+                    result.append(s[i : i + max_chars])
+                    if i + max_chars < len(s):
+                        result.append(" ")
+                run = []
+            result.append(c)
+        else:
+            run.append(c)
+    if run:
+        s = "".join(run)
+        for i in range(0, len(s), max_chars):
+            result.append(s[i : i + max_chars])
+            if i + max_chars < len(s):
+                result.append(" ")
+    return "".join(result)
+
+
 def _offer_pdf_download(content: str, base_name: str) -> None:
     """Offer PDF download if fpdf2 is available."""
     try:
@@ -144,10 +177,14 @@ def _offer_pdf_download(content: str, base_name: str) -> None:
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Helvetica", size=10)
+        # Use explicit width so multi_cell can wrap; avoid "Not enough horizontal space" for long words
+        w = pdf.epw  # effective page width (default margin already applied)
         for line in content.replace("\r", "").split("\n"):
             line = line.replace("**", "").strip()
             if line:
-                pdf.multi_cell(0, 6, line)
+                safe = _pdf_safe_text(line)
+                safe = _pdf_break_long_words(safe, max_chars=72)
+                pdf.multi_cell(w, 6, safe)
         pdf_bytes = pdf.output()
         st.download_button(
             "📕 PDF",
@@ -158,6 +195,11 @@ def _offer_pdf_download(content: str, base_name: str) -> None:
         )
     except ImportError:
         st.caption("PDF: install fpdf2")
+    except Exception as e:
+        if "Unicode" in type(e).__name__ or "FPDF" in type(e).__name__:
+            st.caption("PDF: some characters or layout could not be rendered; use Markdown or Word download.")
+        else:
+            raise
 
 # Project root (directory containing app.py and scripts/)
 PROJECT_ROOT = Path(__file__).resolve().parent
