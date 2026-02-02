@@ -186,6 +186,9 @@ def _offer_pdf_download(content: str, base_name: str) -> None:
                 safe = _pdf_break_long_words(safe, max_chars=72)
                 pdf.multi_cell(w, 6, safe)
         pdf_bytes = pdf.output()
+        # Streamlit download_button expects bytes; fpdf2 output() returns bytearray
+        if not isinstance(pdf_bytes, bytes):
+            pdf_bytes = bytes(pdf_bytes)
         st.download_button(
             "📕 PDF",
             data=pdf_bytes,
