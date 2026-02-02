@@ -138,9 +138,9 @@ def _offer_docx_download(content: str, base_name: str) -> None:
 
 
 def _pdf_safe_text(text: str) -> str:
-    """Return text safe for FPDF default font (Latin-1): replace non-Latin-1 chars to avoid FPDFUnicodeEncodingException."""
+    """Return ASCII-only text for FPDF Helvetica to avoid FPDFUnicodeEncodingException and empty output."""
     return "".join(
-        c if ord(c) <= 255 and (c.isprintable() or c in "\n\t\r") else "?"
+        c if ord(c) < 128 and (c.isprintable() or c in "\n\t\r") else "?"
         for c in text
     )
 
@@ -171,30 +171,32 @@ def _pdf_break_long_words(text: str, max_chars: int = 80) -> str:
 
 
 def _offer_pdf_download(content: str, base_name: str) -> None:
-    """Offer PDF download if fpdf2 is available."""
+    """Offer PDF download if fpdf2 is available. Uses ASCII-only + word breaks for max compatibility."""
     try:
         from fpdf import FPDF
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Helvetica", size=10)
-        # Explicit width so multi_cell wraps and actually draws (epw can be 0 before first add_page in some envs)
         w = getattr(pdf, "epw", None)
         if not w or w <= 0:
             w = pdf.w - pdf.l_margin - pdf.r_margin
         w = max(w, 100)
+        # Always add a title so PDF is never empty
+        pdf.multi_cell(w, 6, "Research Report")
+        pdf.ln(2)
         wrote_any = False
         for line in content.replace("\r", "").split("\n"):
             line = line.replace("**", "").strip()
             if line:
                 safe = _pdf_safe_text(line)
                 safe = _pdf_break_long_words(safe, max_chars=72)
-                if safe.strip():
+                safe = safe.strip() or "(no text)"
+                if safe and safe != "(no text)":
                     pdf.multi_cell(w, 6, safe)
                     wrote_any = True
         if not wrote_any and content.strip():
-            pdf.multi_cell(w, 6, _pdf_safe_text("(Report content could not be rendered in PDF; use Markdown or Word download.)"))
+            pdf.multi_cell(w, 6, "(Report content could not be rendered in PDF; use Markdown or Word download.)")
         pdf_bytes = pdf.output()
-        # Streamlit download_button expects bytes; fpdf2 output() returns bytearray
         if not isinstance(pdf_bytes, bytes):
             pdf_bytes = bytes(pdf_bytes)
         st.download_button(
