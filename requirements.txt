@@ -1,6 +1,9 @@
 # last30days – CLI uses only stdlib; Streamlit app needs:
 streamlit>=1.28.0
 
+# Login protection (email/username + password) for public deployment
+streamlit-authenticator>=0.3.0
+
 # Optional: for Download as Word / PDF in the Streamlit app
 python-docx>=0.8.11
 fpdf2>=2.7.0

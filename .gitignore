@@ -16,6 +16,9 @@ env/
 .env.local
 *.env
 
+# Generated reports (when using LAST30DAYS_OUTPUT_DIR=./out)
+out/
+
 # IDE / OS
 .idea/
 .DS_Store

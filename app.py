@@ -2,16 +2,115 @@
 last30days – Simple Streamlit UI
 
 Share the last30days research tool with your team. Enter a topic, run research,
-and see Reddit + X results from the last 30 days.
+and see Reddit + X results from the last 30 days. Optional login (email/username + password)
+so you can deploy publicly and still restrict access.
 """
 
 import io
+import json
 import os
 import subprocess
 import sys
 from pathlib import Path
 
 import streamlit as st
+
+
+# ---------- Auth (login protection for public app) ----------
+# Auth mode: None = no auth, "password" = shared password only, "email_domain" = email @domain + shared password, "multi" = streamlit-authenticator
+def _get_auth_credentials():
+    """Load auth config from Streamlit secrets. Returns (config_dict, mode)."""
+    try:
+        secrets = getattr(st, "secrets", None)
+        if secrets is None or not hasattr(secrets, "get"):
+            return None, None
+        # Multi-user: JSON with usernames -> { name, email, password }
+        raw = secrets.get("AUTH_CREDENTIALS_JSON")
+        if raw:
+            if isinstance(raw, str):
+                creds = json.loads(raw)
+            else:
+                creds = dict(raw)
+            if creds.get("usernames"):
+                return creds, "multi"
+        # Single shared password, optionally restricted to email domain (e.g. *@stayoasi.com)
+        pwd = secrets.get("AUTH_PASSWORD")
+        domain = secrets.get("AUTH_EMAIL_DOMAIN")
+        if pwd and isinstance(pwd, str) and pwd.strip():
+            cfg = {"shared_password": pwd.strip()}
+            if domain and isinstance(domain, str) and domain.strip():
+                cfg["email_domain"] = domain.strip().lower().replace("@", "")
+            return cfg, "email_domain" if cfg.get("email_domain") else "password"
+    except Exception:
+        pass
+    return None, None
+
+
+def _run_auth_gate():
+    """
+    If auth is configured, show login and gate the app. Returns True if user may see the app.
+    """
+    creds, mode = _get_auth_credentials()
+    if creds is None:
+        return True  # No auth configured → open access (e.g. local dev)
+
+    if mode in ("password", "email_domain"):
+        # Shared password, optionally with email domain restriction
+        if st.session_state.get("_auth_ok"):
+            with st.sidebar:
+                if st.button("Sign out", key="auth_logout"):
+                    st.session_state["_auth_ok"] = False
+                    st.rerun()
+            return True
+        st.subheader("🔐 Sign in")
+        if mode == "email_domain":
+            st.caption(f"Enter your **@{creds['email_domain']}** email and the shared password to access the app.")
+            email = st.text_input("Email", type="default", key="auth_email", placeholder=f"you@{creds['email_domain']}")
+        else:
+            st.caption("Enter the shared password to access the app.")
+            email = None
+        pwd = st.text_input("Password", type="password", key="auth_pwd")
+        if st.button("Sign in", key="auth_btn"):
+            if mode == "email_domain":
+                if not email or not (email.strip().lower().endswith("@" + creds["email_domain"])):
+                    st.error(f"Use an email address ending with @{creds['email_domain']}.")
+                elif pwd and pwd.strip() == creds["shared_password"]:
+                    st.session_state["_auth_ok"] = True
+                    st.rerun()
+                else:
+                    st.error("Wrong password.")
+            else:
+                if pwd and pwd.strip() == creds["shared_password"]:
+                    st.session_state["_auth_ok"] = True
+                    st.rerun()
+                else:
+                    st.error("Wrong password.")
+        st.stop()
+
+    # Multi-user via streamlit-authenticator
+    try:
+        from streamlit_authenticator import Authenticate
+    except ImportError:
+        st.error("Auth is configured but streamlit-authenticator is not installed. Run: pip install streamlit-authenticator")
+        st.stop()
+
+    cookie_name = "last30days_auth"
+    cookie_key = os.environ.get("AUTH_COOKIE_KEY", "last30days_cookie_key_change_me")
+    auth = Authenticate(
+        creds,
+        cookie_name=cookie_name,
+        cookie_key=cookie_key,
+        cookie_expiry_days=30,
+        auto_hash=True,
+    )
+    name, status, username = auth.login(location="main", key="login_form")
+    if not status:
+        st.stop()
+    # Logged in: show logout in sidebar
+    with st.sidebar:
+        st.caption(f"Signed in as **{name or username}**")
+        auth.logout(location="sidebar", key="logout_btn")
+    return True
 
 
 def _offer_docx_download(content: str, base_name: str) -> None:
@@ -175,6 +274,10 @@ def run_research(topic: str, quick: bool, deep: bool, sources: str, emit: str) -
     for key in ("OPENAI_API_KEY", "XAI_API_KEY"):
         if key in os.environ:
             env[key] = os.environ[key]
+    # Write outputs to project out/ so we don't hit PermissionError on ~/.local
+    out_dir = PROJECT_ROOT / "out"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    env["LAST30DAYS_OUTPUT_DIR"] = str(out_dir)
 
     try:
         result = subprocess.run(
@@ -197,6 +300,9 @@ st.set_page_config(
     page_icon="🔍",
     layout="centered",
 )
+
+# Gate app behind login when AUTH_CREDENTIALS_JSON or AUTH_PASSWORD is set in Streamlit secrets
+_run_auth_gate()
 
 st.title("🔍 last30days")
 st.caption("Research any topic from Reddit & X over the last 30 days")

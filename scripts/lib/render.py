@@ -1,12 +1,15 @@
 """Output rendering for last30days skill."""
 
 import json
+import os
 from pathlib import Path
 from typing import List, Optional
 
 from . import schema
 
-OUTPUT_DIR = Path.home() / ".local" / "share" / "last30days" / "out"
+# Override with LAST30DAYS_OUTPUT_DIR if ~/.local is not writable (e.g. in Streamlit or restricted envs)
+_default_out = Path.home() / ".local" / "share" / "last30days" / "out"
+OUTPUT_DIR = Path(os.environ["LAST30DAYS_OUTPUT_DIR"]) if os.environ.get("LAST30DAYS_OUTPUT_DIR") else _default_out
 
 
 def ensure_output_dir():
